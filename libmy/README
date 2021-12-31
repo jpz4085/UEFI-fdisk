@@ -1,0 +1,32 @@
+
+UEFI fdisk: aka fdisk.efi by Bub'soft.
+Build of util-linux fdisk for UEFI BIOS environments.
+Version 0.6 april 2020
+Version <1 means it's pretty much beta software.
+
+First attempt by Bernard Burette <bernard at burette dot net> january 2014.
+
+This is a reduced version of libc.so for UEFI.
+
+
+This library is linked to UEFI fdisk in replacement for the standard C
+library. fdisk is written in C. When builing the UEFI executable we don't
+have Linux running so the memory services or file-system services are not
+available as Linux system calls.
+This library provides all standard C library functions down to a small list
+of functions implemented as mainly system calls. The list is mainly :
+
+File access: open64() close() read() write() poll() fsync() ioctl() lseek64()
+File status: access() sync() stat64()
+Memory: malloc() calloc() realloc() free()
+Enter/exit: atexit() exit() abort()
+Miscellaneous: time()
+
+A few things to know:
+- Any 32 bits stuff has *not* been tested (but is it still necessary in 2015?)
+  the GNU gnu-efi library can be compiled in both 32 bits and 64 bits but it's
+  not yet the case for this project.
+- For all the system calls normally in the standard libray there will be UEFI
+  versions of write(), read() and so on, all these functions are in the ".c"
+  source files in the parent directory, not in this subdirectory.
+

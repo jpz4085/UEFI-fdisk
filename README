@@ -1,0 +1,87 @@
+
+UEFI fdisk: aka fdisk.efi by Bub'soft.
+Build of util-linux fdisk for UEFI BIOS environments.
+Version 0.6 april 2020.
+Version <1 means it's pretty much beta software fdisk in fact.
+
+First attempt by Bernard Burette <bernard at burette dot net>
+january 2014.
+
+This is a build of util-linux fdisk for UEFI. You should be able to
+register it as a boot-program in the UEFI or run it from the UEFI Shell
+if you system has one. Anyway this executable image should be copied to
+the EFI System Partition (aka EFI SP or Partition type 0xEF) to be
+permanently available. You also have the option of copying it to a
+removable storage like USB storage and invoke the UEFI Shell then
+navigate ("fs1:", "cd xx", etc.) to your key to run it from there.
+
+Unlike the original fdisk, this program accepts no options on its
+command line. When you run it, it prints a list of all detected hard
+disks each with a name like "EFI_HANDLE(<hex_number>)" and if more than
+one is found lets you choose which one you want to review/edit.
+
+Also the commands to backup the partition table to disk (O option in
+main menu) and to load the partition table from a backup file (I option
+in main menu) do not work (yet). I need to write the code to read from
+and write to a file in pure UEFI code first.
+
+Apart from that all functions should operate properly. Refer to fdisk
+manual for more information on how to use this program.
+
+
+To successfully build UEFI fdisk, you will additional packages:
+- util-linux fdisk, the original code can be found at:
+  https://github.com/karelzak/util-linux
+  fdisk needs additional libraries as well: check it's documentation.
+- GNU-EFI library, can be found at:
+  http://sourceforge.net/projects/gnu-efi/
+
+Unpack the sources from GPT fdisk to a location you like, it will create
+a subdirectory containing all its stuff. Then go inside this
+subdirectory (for example ~/util-linux-2.34) and there unpack *this*
+package, it will create a new subdirectory (for example
+~/util-linux-2.34/uefi-0.6) where you will actually build the UEFI
+version of fdisk. You now need to unpack GNU-EFI package in this build
+directory, it will once again create its own subdirectory (for example
+~/util-linux-2.34/uefi-0.6/gnu-efi-3.0.11).
+
+Now your current directory should still be ~/util-linux-2.34/uefi-0.6,
+so just enter "make" and voilà!
+
+
+A few things to know:
+- We use GNU-EFI version 3.0.11 but any version around 3.x and hopefully
+  newer versions should work as well, you might need to adjust the
+  directory name in the Makefile if auto-detection does not work.
+- No 32 bits stuff has been done (is it still necessary nowadays?) the
+  GNU-EFI library can be compiled in both 32 bits and 64 bits but this
+  program will at the very least miss the start-up code "start-ia32.S"
+  and the relocation management code "relocate-ia32.c", feel free to
+  help me if you think this is a necessity.
+- We use a hand-made version of the standard "libc" because the linux
+  one embeds system calls to the kernel (we don't want them because EFI
+  has nothing to do with Linux kernel), this library is mostly built
+  from bits imported from "dietlibc" but some other bits were imported
+  from "glibc". This private "libc" library is called "libmy.a" and is
+  built in the "libmy/" subdirectory.
+- We build everithing using 2 bytes wchar_t because EFI is UTF-16, still
+  util-linux fdisk uses UTF-8 internally so it doesn't need any other
+  UTF-xx and our glue functions hand code conversions from UTF-8 to EFI
+  UTF-16: this might not work in all languages.
+- As written before the UEFI functions don't include directory and file
+  management so the parts of fdisk for backup to file and recovery from
+  file don't work at all (the open() function returns EIPERM and fdisk
+  will display an error).
+- For all the system calls from the standard libray we build EFI
+  versions of functions like write(), read() and so on, all these
+  functions are in the ".c" source files in this "." directory, not in
+  the"libmy/" subdirectory.
+- If you change options in the Makefile (like enable asserts or stack
+  checking or _FORTIFY_SOURCE or EFI_DEBUG debugging) the link should
+  warn you that you're adding bloat to the program.
+- Some libmy.a files have been updated to compile with version 9 of GCC,
+  as this is the version packaged with most recent Ubuntu 19.10 you need
+  around 20 MiB of free disk space to build everything, the gdisk.efi
+  programm itself is a little more than 300 kiB.
+ 
+
