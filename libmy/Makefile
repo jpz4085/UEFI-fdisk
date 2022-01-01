@@ -47,7 +47,7 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 # UEFI firmware doesn't initialize CPU for MMX et al (returning float or double
 # using Linux x86_64 ABI is not possible: better break during compilation than
 # crash during run).
-CFLAGS += -mno-mmx -mno-sse
+#CFLAGS += -mno-mmx -mno-sse
 # Optimize for size. We also need to use -fno-inline otherwise <stdlib.h> will
 # try to define atof() as "inline" returning a "float" which is not available
 # in UEFI using x86_64 ABI and is forbidden by -mno-mmx option.
@@ -71,30 +71,16 @@ CFLAGS += -U_FORTIFY_SOURCE
 CFLAGS += -g
 
 # List of object files required to link a nice fdisk.so.
-OBJS += syscall.o sleep.o nanosleep.o errno.o
-OBJS += strlen.o strnlen.o strcmp.o strncmp.o strcpy.o strcat.o
-OBJS += strcasecmp.o strncasecmp.o strsep.o strtok_r.o
-OBJS += strchr.o strdup.o strspn.o strcspn.o strndup.o strncpy.o
-OBJS += memset.o memset_chk.o memcmp.o memchr.o memmove.o
-OBJS += memccpy.o memcpy.o memcpy_chk.o mempcpy.o
-OBJS += tolower.o toupper.o
-OBJS += ltostr.o lltostr.o strtol.o strtoul.o strtod.o
-OBJS += stdio.o fopen.o fdopen.o setvbuf.o fileno.o fflush.o feof.o fclose.o
-OBJS += fstat64.o
-OBJS += ferror.o clearerr.o
-OBJS += fgetc.o fgets.o fread.o
-OBJS += fputc.o fputs.o fwrite.o writev.o
-OBJS += printf.o fprintf.o vfprintf.o
-OBJS += printf_chk.o fprintf_chk.o vfprintf_chk.o
-OBJS += sprintf.o snprintf.o vsnprintf.o
-OBJS += sprintf_chk.o snprintf_chk.o vsnprintf_chk.o
-OBJS += asprintf.o asprintf_chk.o vasprintf.o vasprintf_chk.o
-OBJS += v_printf.o putchar.o puts.o
-OBJS += sscanf.o vsscanf.o vfscanf.o fscanf.o
-OBJS += v_scanf.o warnx.o errx.o
+OBJS += syscall.o sleep.o nanosleep.o errno.o pipe.o
+OBJS += string.o explicit_bzero.o tolower.o toupper.o
+OBJS += memory.o stdio.o setvbuf.o makedev.o
+OBJS += fstat.o fstream.o fileman.o
+OBJS += print.o putchar.o puts.o
+OBJS += scan.o warnx.o errx.o clearerr.o
 OBJS += C-ctype-data.o C-ctype.o ctype-info.o
-OBJS += qsort.o isatty.o rpmatch.o signal.o getenv.o getpid.o getuid.o
-OBJS += rand.o stack_chk_fail.o assert_fail.o
+OBJS += qsort.o isatty.o rpmatch.o signal.o identity.o
+OBJS += stack_chk_fail.o assert_fail.o environ.o proc.o
+OBJS += gettimeofday.o random.o directory.o xpg_basename.o
 
 
 # Build the library by default.
