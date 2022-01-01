@@ -51,8 +51,8 @@ manual for more information on how to use this program.
 
 
 To successfully build UEFI fdisk, you will additional packages:
-- util-linux fdisk, the original code can be found at:
-  https://github.com/karelzak/util-linux
+- util-linux fdisk, the official source can be found at:
+  https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/
   fdisk needs additional libraries as well: check it's documentation.
 - GNU-EFI library, can be found at:
   http://sourceforge.net/projects/gnu-efi/
