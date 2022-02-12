@@ -63,9 +63,11 @@ struct uuid {
 
 /**
  * Remplit un buffer avec des octets aléatoires.
+ * Returns 0 when all bytes are randomized for compatibility with
+ * util-linux 2.37 and above. The return value is currently unused.
  */
-void random_get_bytes( void* , size_t ) ;
-void random_get_bytes( void* buf , size_t nbytes )
+int ul_random_get_bytes( void* , size_t ) ;
+int ul_random_get_bytes( void* buf , size_t nbytes )
 {
 	uint8_t * p ;
 	unsigned char first = 1 ;
@@ -86,6 +88,7 @@ void random_get_bytes( void* buf , size_t nbytes )
 		p ++ ;
 		nbytes -- ;
 	}
+	return nbytes != 0;
 }
 
 /*
@@ -130,7 +133,7 @@ void uuid_generate_random( uuid_t out )
 {
 	struct uuid nuuid ;
 	/* generates random bits for new UUID */
-	random_get_bytes( & nuuid , sizeof( nuuid ) ) ;
+	ul_random_get_bytes( & nuuid , sizeof( nuuid ) ) ;
 	/* set version 4 as required by RFC 4122 */
 	nuuid. time_hi_and_version &= 0x0fff ;
 	nuuid. time_hi_and_version |= 0x4000 ;
