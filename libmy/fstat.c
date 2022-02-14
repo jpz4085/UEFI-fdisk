@@ -28,10 +28,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int fstat64( int fd , struct stat64 *buf )
-{
-	return __fxstat64( _STAT_VER_LINUX , fd , buf ) ;
-}
+/* Modified __fxstat64 for GCC11 compatibility in io.c 
+   which now replaces fstat64 previously found here. */
 
 int
 fstatat64 ( fd, file, buf, flag )

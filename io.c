@@ -925,18 +925,14 @@ int ioctl( int fd , unsigned long int request , ... )
 
 /**
  * Informations.
- * @param ver La version (inutilisé)
  * @param fd Le numéro du descripteur
  * @param stat_buf L'emplacement où stocker les informations lues
+ * Modified from __fxstat64 for GCC11 compatibility.
  */
-int __fxstat64( int ver __attribute__((unused)) ,
-	int fd , struct stat64 * stat_buf )
+int fstat64( int fd , struct stat64 * stat_buf )
 {
 	/* contrôle du numéro */
-	if ( numero( fd ) < 0 ) {
-		errno = EINVAL ;
-		return -1 ;
-	}
+	if ( numero( fd ) < 0 ) return -1 ;
 	/* initialise tout à 0 */
 	memset( stat_buf , 0 , sizeof( struct stat64 ) ) ;
 	/* positionne le mode en fonction du type du fd */
