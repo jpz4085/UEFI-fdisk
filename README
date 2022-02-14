@@ -2,12 +2,17 @@ UEFI fdisk: aka fdisk.efi by Bub'soft.
 Build of util-linux fdisk for UEFI BIOS environments.
 Original: https://sourceforge.net/projects/uefi-fdisk/
 
-Version 0.6.3 December 2021
+Version 0.6.4 February 2022
 Compatible with fdisk v2.36.1 to v2.37.2
-Consolidated many functions in fewer source files.
+Updated random byte generator for util-linux 2.36.1 and above.
+Added GCC11 compatibility.
 
 History:
 ========
+
+Version 0.6.3 December 2021
+Compatible with fdisk v2.36.1 to v2.37.2
+Consolidated many functions in fewer source files.
 
 Version 0.6.2 (unreleased)
 Compatible with fdisk v2.36.1 to v2.37.2
