@@ -3,7 +3,7 @@ Build of util-linux fdisk for UEFI BIOS environments.
 Original: https://sourceforge.net/projects/uefi-fdisk/
 
 Version 0.6.4 February 2022
-Compatible with fdisk v2.36.1 to v2.37.2
+Compatible with fdisk v2.36.1 to v2.37.4
 Updated random byte generator for util-linux 2.36.1 and above.
 Added GCC11 compatibility.
 
