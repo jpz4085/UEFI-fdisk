@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <linux/hdreg.h>
+#include <linux/fd.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
 #include <string.h>
@@ -903,6 +904,11 @@ int ioctl( int fd , unsigned long int request , ... )
 			/* l'argument est "unsigned" */
 			* va_arg( arg_ptr , unsigned * ) = 1024 * 1024 ;
 			break ;
+		}
+		case FDGETFDCSTAT : {
+			/* Return invalid for floppy status */
+			errno = EINVAL ;
+			return -1 ;
 		}
 		default : {
 			/* TODO! */
