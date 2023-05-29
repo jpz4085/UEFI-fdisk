@@ -73,15 +73,15 @@ CFLAGS += -g
 # List of object files required to link a nice fdisk.so.
 OBJS += syscall.o sleep.o nanosleep.o errno.o pipe.o
 OBJS += string.o explicit_bzero.o tolower.o toupper.o
-OBJS += memory.o stdio.o setvbuf.o makedev.o
+OBJS += memory.o stdio.o setvbuf.o makedev.o colors.o
 OBJS += fstat.o fstream.o fileman.o
 OBJS += print.o putchar.o puts.o
 OBJS += scan.o warnx.o errx.o clearerr.o
 OBJS += C-ctype-data.o C-ctype.o ctype-info.o
 OBJS += qsort.o isatty.o rpmatch.o signal.o identity.o
 OBJS += stack_chk_fail.o assert_fail.o environ.o proc.o
-OBJS += gettimeofday.o random.o directory.o xpg_basename.o
-
+OBJS += getopt.o gettimeofday.o random.o directory.o
+OBJS += xpg_basename.o
 
 # Build the library by default.
 #
