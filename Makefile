@@ -116,7 +116,7 @@ MODULES += ../disk-utils/fdisk-fdisk \
 OBJS = $(MODULES:=.o)
 
 # Extra object files replacing libraries.
-OBJS += uuid.o colors.o getopt.o thread.o
+OBJS += uuid.o getopt.o thread.o
 
 
 # Build only the UEFI version by default.
