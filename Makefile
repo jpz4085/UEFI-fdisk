@@ -154,7 +154,7 @@ distclean: clean
 		--disable-widechar --without-tinfo --without-readline \
 		--without-python --disable-nls \
 		--disable-fs-paths-default --disable-fs-paths-extra \
-		--disable-colors-default \
+		--disable-colors-default --disable-libblkid \
 		--enable-libuuid --enable-libuuid-force-uuidd \
 		--enable-libfdisk --enable-fdisks \
 		--enable-static --enable-static-programs=fdisk \
@@ -180,7 +180,7 @@ distclean: clean
 #
 rinse: ../Makefile
 	$(MAKE) -C .. -j fdisk
-	cd ../.libs;ar d libblkid.a $$(ar t libblkid.a|grep ^libcommon)
+	cd ../.libs;ar d libuuid.a $$(ar t libuuid.a|grep ^libcommon)
 	cd ../.libs;ar d libfdisk.a $$(ar t libfdisk.a|grep ^libcommon)
 	cd ../.libs;ar d libtcolors.a $$(ar t libtcolors.a|grep ^libcommon)
 	cd ../.libs;ar d libsmartcols.a $$(ar t libsmartcols.a|grep ^libcommon)
@@ -218,7 +218,7 @@ libmy.a: #no prerequisites
 fdisk.so: libefi.a libmy.a $(OBJS) $(GLUE_OBJS) rinse
 	$(LD) -nostdlib --no-undefined -Telf-$(ARCH).lds \
 		$(OBJS) $(GLUE_OBJS) $(LDFLAGS) \
-		-L../.libs -lfdisk -lblkid -lsmartcols -ltcolors \
+		-L../.libs -lfdisk -luuid -lsmartcols \
 		-L$(GNUEFI)/$(ARCH)/lib -L$(GNUEFI)/lib -lefi \
 		-Llibmy -lmy -lcommon -lmy \
 		--entry=_start $(MAPOPT) -o $@
@@ -245,7 +245,7 @@ fdisk.so: libefi.a libmy.a $(OBJS) $(GLUE_OBJS) rinse
 #
 fdisk: libmy.a $(OBJS) rinse
 	$(CC) -g $(OBJS) $(LDFLAGS) -Wl,-u,__ctype_init \
-		-L../.libs -lfdisk -lblkid -lsmartcols -ltcolors \
+		-L../.libs -lfdisk -luuid -lsmartcols \
 		-Llibmy -lmy -lcommon -lmy \
 		-flto -static $(MAPOPT) -o $@
 
