@@ -43,7 +43,7 @@ ARCH = x86_64
 
 
 # Name of the directory where GNU EFI is built.
-GNUEFI = $(shell ls -d gnu-efi-*)
+GNUEFI = $(wildcard gnu-efi-*)
 
 # Compiler switch for 32 or 64 bits.
 ifeq ($(ARCH),ia32)
@@ -106,7 +106,7 @@ LDFLAGS += -zrelro
 
 # Object files to be built for our glue with UEFI.
 GLUE_OBJS = start-$(ARCH).o relocate-$(ARCH).o initfini.o \
-	efi_main.o io.o alloc.o time.o debug.o
+	efi_main.o io.o alloc.o time.o debug.o thread.o
 
 # Module names for fdisk (copied from util-linux Makefile).
 MODULES += ../disk-utils/fdisk-fdisk \
@@ -116,7 +116,7 @@ MODULES += ../disk-utils/fdisk-fdisk \
 OBJS = $(MODULES:=.o)
 
 # Extra object files replacing libraries.
-OBJS += uuid.o getopt.o thread.o
+OBJS += uuid.o
 
 
 # Build only the UEFI version by default.

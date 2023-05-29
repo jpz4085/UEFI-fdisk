@@ -24,9 +24,8 @@
  *
  */
 
-
-#include "uefi.h"
-#include "debug.h"
+#include "libmy.h"
+#include <stddef.h>
 #include <getopt.h>
 
 int optind = 1 ;
