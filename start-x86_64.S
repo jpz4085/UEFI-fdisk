@@ -117,3 +117,4 @@ _start:
 	.global ST
 	.comm ST,8,8
 
+        .section .note.GNU-stack,"",%progbits
