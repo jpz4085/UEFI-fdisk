@@ -24,10 +24,16 @@
 #include "libmy.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 #include <endian.h>
 #include <ctype.h>
+#include <inttypes.h>
+
+#ifndef ERR_MAP
+# define ERR_MAP(n) n
+#endif
 
 #ifdef strcmp
 # undef strcmp
@@ -57,6 +63,16 @@
 # undef isxdigit
 #endif
 #define isxdigit( c ) ( ( c >= '0' && c <= '9' ) || ( c >= 'A' && c <= 'F' ) || ( c >= 'a' && c <= 'f' ) )
+
+#define array_length(var) (int) (sizeof (var) / sizeof ((var)[0]))
+
+const char *const sys_errlist[] =
+{
+#define _S(n, str)         [ERR_MAP(n)] = str,
+#define N_(desc)           desc
+#include "errlist.h"
+#undef _S
+};
 
 char* strcat( register char* s , register const char* t )
 {
@@ -110,6 +126,16 @@ strdup (const char *s)
 	if (new == NULL)
 		return NULL;
 	return (char *) memcpy (new, s, len);
+}
+
+char * strerror(int errnum)
+{
+	if (errnum >= 0 && errnum < array_length (sys_errlist))
+	    return ((char *)sys_errlist[errnum]);
+
+	char *errbuf = (char *)malloc(50);
+	sprintf(errbuf, "%s%d", "Unknown error ", errnum);
+	return errbuf;
 }
 
 size_t strlen(const char *s) {
@@ -185,7 +211,6 @@ long int strtol(const char *nptr, char **endptr, int base)
 	return (neg?-v:v);
 }
 __attribute__((nothrow,leaf,nonnull((1))))
-__typeof (strtol) strtoimax __attribute__((alias("strtol"))) ;
 
 size_t strcspn(const char *s, const char *reject)
 {
@@ -308,11 +333,125 @@ skip0x:
 	return (neg?-v:v);
 }
 __attribute__((nothrow,leaf,nonnull((1))))
-__typeof (strtoul) strtoumax __attribute__((alias("strtoul"))) ;
 
-unsigned long long int strtoull(const char *nptr, char **endptr, int base)
+unsigned long long int strtoull(const char *ptr, char **endptr, int base)
 {
-	return (unsigned long long int) strtoul(nptr, endptr, base);
+	int neg = 0, overflow = 0;
+	unsigned long long int v=0;
+	const char* orig;
+	const char* nptr=ptr;
+	while(isspace(*nptr)) ++nptr;
+	if (*nptr == '-') { neg=1; nptr++; }
+	else if (*nptr == '+') ++nptr;
+	orig=nptr;
+	if (base==16 && nptr[0]=='0') goto skip0x;
+	if (base) {
+		register unsigned int b=base-2;
+		if ((b>34)) { errno=EINVAL; return 0; }
+	} else {
+		if (*nptr=='0') {
+			base=8;
+skip0x:
+			if ((nptr[1]=='x'||nptr[1]=='X') && isxdigit(nptr[2])) {
+				nptr+=2;
+				base=16;
+			}
+		} else
+			base=10;
+	}
+	while((*nptr)) {
+		register unsigned char c=*nptr;
+		c=(c>='a'?c-'a'+10:c>='A'?c-'A'+10:c<='9'?c-'0':0xff);
+		if ((c>=base)) break;     /* out of base */
+		{
+			register unsigned long long x=(v&0xff)*base+c;
+			register unsigned long long w=(v>>8)*base+(x>>8);
+			if (w>(ULLONG_MAX>>8)) overflow=1;
+			v=(w<<8)+(x&0xff);
+		}
+		++nptr;
+	}
+	if ((nptr==orig)) {         /* no conversion done */
+		nptr=ptr;
+		errno=EINVAL;
+		v=0;
+	}
+	if (endptr) *endptr=(char *)nptr;
+	if (overflow) {
+		errno=ERANGE;
+		return ULLONG_MAX;
+	}
+	return (neg?-v:v);
+}
+
+uintmax_t strtoumax(const char *ptr, char **endptr, int base)
+{
+        int neg = 0, overflow = 0;
+	uintmax_t v=0;
+	const char* orig;
+	const char* nptr=ptr;
+	while(isspace(*nptr)) ++nptr;
+	if (*nptr == '-') { neg=1; nptr++; }
+	else if (*nptr == '+') ++nptr;
+	orig=nptr;
+	if (base==16 && nptr[0]=='0') goto skip0x;
+	if (base) {
+		register unsigned int b=base-2;
+		if ((b>34)) { errno=EINVAL; return 0; }
+	} else {
+		if (*nptr=='0') {
+			base=8;
+skip0x:
+			if ((nptr[1]=='x'||nptr[1]=='X') && isxdigit(nptr[2])) {
+				nptr+=2;
+				base=16;
+			}
+		} else
+			base=10;
+	}
+	while((*nptr)) {
+		register unsigned char c=*nptr;
+		c=(c>='a'?c-'a'+10:c>='A'?c-'A'+10:c<='9'?c-'0':0xff);
+		if ((c>=base)) break;     /* out of base */
+		{
+			uintmax_t x=(v&0xff)*base+c;
+			uintmax_t w=(v>>8)*base+(x>>8);
+			if (w>(UINTMAX_MAX>>8)) overflow=1;
+			v=(w<<8)+(x&0xff);
+		}
+		++nptr;
+	}
+	if ((nptr==orig)) {         /* no conversion done */
+		nptr=ptr;
+		errno=EINVAL;
+		v=0;
+	}
+	if (endptr) *endptr=(char *)nptr;
+	if (overflow) {
+		errno=ERANGE;
+		return UINTMAX_MAX;
+	}
+	return (neg?-v:v);
+}
+
+intmax_t strtoimax(const char *nptr, char **endptr, int base)
+{
+        int neg=0;
+	uintmax_t v;
+	const char*orig=nptr;
+	while(isspace(*nptr)) nptr++;
+	if (*nptr == '-' && isalnum(nptr[1])) { neg=-1; ++nptr; }
+	v=strtoul(nptr,endptr,base);
+	if (endptr && *endptr==nptr) *endptr=(char *)orig;
+	if (v>=ABS_LONG_MIN) {
+		if (v==ABS_LONG_MIN && neg) {
+			errno=0;
+			return v;
+		}
+		errno=ERANGE;
+		return (neg?INTMAX_MIN:INTMAX_MAX);
+	}
+	return (neg?-v:v);
 }
 
 char*strtok_r(char*s,const char*delim,char**ptrptr) {

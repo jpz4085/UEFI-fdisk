@@ -81,7 +81,7 @@ OBJS += C-ctype-data.o C-ctype.o ctype-info.o
 OBJS += qsort.o isatty.o rpmatch.o signal.o identity.o
 OBJS += stack_chk_fail.o assert_fail.o environ.o proc.o
 OBJS += getopt.o gettimeofday.o random.o directory.o
-OBJS += xpg_basename.o
+OBJS += xpg_basename.o reallocarray.o
 
 # Build the library by default.
 #
