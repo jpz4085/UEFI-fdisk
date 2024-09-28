@@ -6,9 +6,6 @@ This is a port of the util-linux fdisk partitioning tool for use in a UEFI envir
 
 <img align="right" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_create.png" width=427 height=452/>
 
-Figure 1: Display fdisk usage information. &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;
-Figure 2: Create partitions and set types.
-
 <img align="center" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_details.png"/>
 
 Figure 3: Display detailed partition information.
