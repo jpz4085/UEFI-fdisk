@@ -5,8 +5,8 @@
 ## UEFI fdisk est un portage de util-linux fdisk vers UEFI/BIOS.
 ## Ce fichier a été initié par Bernard Burette en janvier 2014.
 ##
-## All this work is copyleft Bernard Burette.
-## Gauche d'auteur Bernard Burette.
+## Original work is copyleft Bernard Burette.
+## Modifications are copyleft Joseph Zeller.
 ##
 ## This program is distributed under the terms of the GNU General Public
 ##  License version 2 or more.
@@ -69,19 +69,22 @@ CFLAGS += -Wall -Wextra -Werror
 CFLAGS += -U_FORTIFY_SOURCE
 # Symboles
 CFLAGS += -g
+# Enable strerror printing.
+CFLAGS += -DWANT_ERROR_PRINTF
 
 # List of object files required to link a nice fdisk.so.
 OBJS += syscall.o sleep.o nanosleep.o errno.o pipe.o
 OBJS += string.o explicit_bzero.o tolower.o toupper.o
 OBJS += memory.o stdio.o setvbuf.o makedev.o colors.o
 OBJS += fstat.o fstream.o fileman.o
-OBJS += print.o putchar.o puts.o
-OBJS += scan.o warnx.o errx.o clearerr.o
+OBJS += print.o putchar.o puts.o pager.o
+OBJS += getopt_long.o gettimeofday.o
+OBJS += scan.o errors.o clearerr.o
 OBJS += C-ctype-data.o C-ctype.o ctype-info.o
 OBJS += qsort.o isatty.o rpmatch.o signal.o identity.o
 OBJS += stack_chk_fail.o assert_fail.o environ.o proc.o
-OBJS += getopt.o gettimeofday.o random.o directory.o
-OBJS += xpg_basename.o reallocarray.o
+OBJS += random.o directory.o xpg_basename.o
+OBJS += reallocarray.o converter.o
 
 # Build the library by default.
 #
