@@ -6,8 +6,8 @@
  * UEFI fdisk est un portage de util-linux fdisk vers UEFI/BIOS.
  * Ce fichier a été initié par Bernard Burette en janvier 2014.
  *
- * All this work is copyleft Bernard Burette.
- * Gauche d'auteur Bernard Burette.
+ * Original work is copyleft Bernard Burette.
+ * Modifications are copyleft Joseph Zeller.
  *
  * This program is distributed under the terms of the GNU General Public
  *  License version 2 or more.
@@ -1060,6 +1060,7 @@ int get_terminal_dimension(int *cols, int *lines)
 	return 0 ;
 }
 
+
 /**
  * Largeur de l'écran.
  */
@@ -1071,17 +1072,6 @@ int get_terminal_width( void )
 	if ( r ) c = 0 ;
 	return c ;
 }
-
-
-/**
- * Pour afficher en plusieurs écrans avec un pagineur.
- */
-
-void pager_open( void ) ;
-void pager_open() { }
-
-void pager_close( void ) ;
-void pager_close() { }
 
 
 /**
