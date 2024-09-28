@@ -6,8 +6,8 @@
  * UEFI fdisk est un portage de util-linux fdisk vers UEFI/BIOS.
  * Ce fichier a été initié par Bernard Burette en janvier 2014.
  *
- * All this work is copyleft Bernard Burette.
- * Gauche d'auteur Bernard Burette.
+ * Original work is copyleft Bernard Burette.
+ * Modifications are copyleft Joseph Zeller.
  *
  * This program is distributed under the terms of the GNU General Public
  *  License version 2 or more.
@@ -32,11 +32,35 @@
 #include <string.h>
 #include "dietstdio.h"
 
+/* Types of printf arguments */
+union args {
+	int		intarg;
+	unsigned int	uintarg;
+	char		*pchararg;
+	long		longarg;
+	long long 	llongarg;
+	double		doublearg;
+};
+
+#define T_INT		1
+#define T_UINT		2
+#define T_PCHAR		3
+#define T_LONG		4
+#define T_LLONG		5
+#define T_DOUBLE	6
+
+#define ARG_TABLE_SZ	50
+
 #define WANT_LONGLONG_PRINTF
 #undef __USE_EXTERN_INLINES
 
+#define	to_digit(c)	((c) - '0')
+#define is_digit(c)	((unsigned)to_digit(c) <= 9)
+
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #define MAX_WIDTH 10*1024
+
+int build_argtable (const char *fmt, union args **argtable, va_list ap);
 
 int printf(const char *format,...)
 {
@@ -161,7 +185,13 @@ static int write_pad(unsigned int* dlen,struct arg_printf* fn, unsigned int len,
 
 int __v_printf(struct arg_printf* fn, const char *format, va_list arg_ptr)
 {
+  const char *fmt = format;
+  union args *tableptr = NULL;
+  union args argtable[ARG_TABLE_SZ];
+  va_list arg_dup;
+  unsigned int hold;
   unsigned int len=0;
+  unsigned int nextarg = 1;
 #ifdef WANT_ERROR_PRINTF
   int _errno = errno;
 #endif
@@ -177,7 +207,7 @@ int __v_printf(struct arg_printf* fn, const char *format, va_list arg_ptr)
       union { char*s; } u_str;
 #define s u_str.s
       int retval;
-      unsigned char ch, padwith=' ', precpadwith=' ';
+      unsigned char ch, cp, chn, padwith=' ', precpadwith=' ';
       char flag_in_sign=0;
       char flag_upcase=0;
       char flag_hash=0;
@@ -187,11 +217,12 @@ int __v_printf(struct arg_printf* fn, const char *format, va_list arg_ptr)
       char flag_dot=0;
       signed char flag_long=0;
       unsigned int base;
-      unsigned int width=0, preci=0;
+      unsigned int width=0, preci=0, num = 0;
       long number=0;
 #ifdef WANT_LONGLONG_PRINTF
       long long llnumber=0;
 #endif
+      va_copy (arg_dup, arg_ptr);
       ++format;
 inn_printf:
       switch(ch=*format++) {
@@ -236,10 +267,26 @@ inn_printf:
       case '7':
       case '8':
       case '9':
+        num=strtoul(format-1,(char**)&s,10);
+	chn = ch;
+	ch = *format++;
+	if (ch == '$') {
+		nextarg = num;
+		if (tableptr == NULL) {
+			tableptr = argtable;
+			retval = build_argtable(fmt, &tableptr, arg_dup);
+			if (retval <= 0) {
+				B_WRITE(fn,&chn,1);
+				fputs("$", stdout);
+				break;
+			}
+		}
+		goto inn_printf;
+	}
 	if(flag_dot) return -1;
-	width=strtoul(format-1,(char**)&s,10);
+	width = num;
 	if (width>MAX_WIDTH) return -1;
-	if (ch=='0' && !flag_left) padwith='0';
+	if (chn=='0' && !flag_left) padwith='0';
 	format=s;
 	goto inn_printf;
       case '*':
@@ -248,6 +295,29 @@ inn_printf:
 	   * a positive field width
 	   **/
 	  int tmp;
+	  ch = *format++;
+	  if (is_digit(ch)) {
+	  	chn = ch;
+	  	num=strtoul(format-1,(char**)&s,10);
+	  	ch = *format++;
+	  	if (ch == '$') {
+	  		hold = nextarg;
+	  		if (tableptr == NULL) {
+				tableptr = argtable;
+				retval = build_argtable(fmt, &tableptr, arg_dup);
+				if (retval <= 0) {
+					B_WRITE(fn,&chn,1);
+					fputs("$", stdout);
+					break;
+				}
+			}
+			nextarg = num;
+			tmp = tableptr[nextarg++].intarg;
+			nextarg = hold;
+			goto inn_printf;
+	  	}
+	  }
+	  --format;
 	  if ((tmp=va_arg(arg_ptr,int))<0) {
 	    flag_left=1;
 	    tmp=-tmp;
@@ -258,9 +328,34 @@ inn_printf:
       case '.':
 	flag_dot=1;
 	if (*format=='*') {
-	  int tmp=va_arg(arg_ptr,int);
-	  preci=tmp<0?0:tmp;
-	  ++format;
+		int tmp;
+		++format;
+		cp = *format;
+	  	if (is_digit(cp)) {
+	  		ch = *format++;
+	  		chn = ch;
+	  		num=strtoul(format-1,(char**)&s,10);
+	  		ch = *format++;
+	  		if (ch == '$') {
+	  			hold = nextarg;
+	  			if (tableptr == NULL) {
+					tableptr = argtable;
+					retval = build_argtable(fmt, &tableptr, arg_dup);
+					if (retval <= 0) {
+						B_WRITE(fn,&chn,1);
+						fputs("$", stdout);
+						break;
+					}
+				}
+				nextarg = num;
+				tmp = tableptr[nextarg++].intarg;
+				preci=tmp<0?0:tmp;
+				nextarg = hold;
+	  		}
+	  	} else {
+	  		tmp=va_arg(arg_ptr,int);
+	  		preci=tmp<0?0:tmp;
+	  	}
 	} else {
 	  long int tmp=strtol(format,(char**)&s,10);
 	  preci=tmp<0?0:tmp;
@@ -270,7 +365,11 @@ inn_printf:
 	goto inn_printf;
       /* print a char or % */
       case 'c':
-	ch=(char)va_arg(arg_ptr,int);
+        if (tableptr != NULL) {
+        	ch=(char) tableptr[nextarg++].intarg;
+        } else {
+		ch=(char)va_arg(arg_ptr,int);
+	}
       case '%':
 	B_WRITE(fn,&ch,1);
         ++len;
@@ -280,12 +379,17 @@ inn_printf:
       case 'm':
 	s=strerror(_errno);
 	sz=strlen(s);
-	B_WRITE(fn,s,sz); len+=sz;
+	B_WRITE(fn,s,sz);
+	len+=sz;
 	break;
 #endif
       /* print a string */
       case 's':
-	s=va_arg(arg_ptr,char *);
+        if (tableptr != NULL) {
+        	s=tableptr[nextarg++].pchararg;
+        } else {
+		s=va_arg(arg_ptr,char *);
+	}
 #ifdef WANT_NULL_PRINTF
 	if (!s) s="(null)";
 #endif
@@ -396,16 +500,28 @@ num_printf:
 	s=buf+1;
 	if (flag_long>0) {
 #ifdef WANT_LONGLONG_PRINTF
-	  if (flag_long>1)
-	    llnumber=va_arg(arg_ptr,long long);
-	  else
+	  if (flag_long>1) {
+	    	if (tableptr != NULL) {
+        		llnumber=tableptr[nextarg++].llongarg;
+        	} else {
+	        	llnumber=va_arg(arg_ptr,long long);
+	  	}
+	  } else
 #endif
-	    number=va_arg(arg_ptr,long);
+		if (tableptr != NULL) {
+        		number=tableptr[nextarg++].longarg;
+        	} else {
+	    		number=va_arg(arg_ptr,long);
+		}
 	}
 	else {
-	  number=va_arg(arg_ptr,int);
-	  if (sizeof(int) != sizeof(long) && !flag_in_sign)
-	    number&=((unsigned int)-1);
+		if (tableptr != NULL) {
+        		number=tableptr[nextarg++].intarg;
+        	} else {
+	  		number=va_arg(arg_ptr,int);
+	  	}
+	  	if (sizeof(int) != sizeof(long) && !flag_in_sign)
+	    	number&=((unsigned int)-1);
 	}
 	if (flag_in_sign) {
 #ifdef WANT_LONGLONG_PRINTF
@@ -448,8 +564,13 @@ num_printf:
       case 'f':
       case 'g':
 	{
+	  double d;
 	  int g=(ch=='g');
-	  double d=va_arg(arg_ptr,double);
+	  if (tableptr != NULL) {
+        	   d=tableptr[nextarg++].doublearg;
+          } else {
+	  	   d=va_arg(arg_ptr,double);
+	  }
 	  s=buf+1;
 	  if (width==0) width=1;
 	  if (!flag_dot) preci=6;
@@ -496,6 +617,204 @@ num_printf:
     }
   }
   return len;
+}
+
+
+/*
+ * Build an array of unions containing pointers to all variable arguments
+ * passed to __v_printf and index them for use with positional parameters.
+ * Returns the number of arguments or negative one if none were found.
+ * Based on __find_arguments from the OpenBSD vfprintf.c source code.
+ * https://github.com/openbsd/src/blob/master/lib/libc/stdio/vfprintf.c
+ */
+int build_argtable (const char *fmt, union args **argtable, va_list ap)
+{
+	int ch;
+	int flag_long = 0;
+	int flag_in_sign = 0;
+	unsigned long sz = 0;
+	unsigned char cp, *typeptr;
+	unsigned char typetable[ARG_TABLE_SZ];
+	unsigned int num, hold, nextarg, argcount;
+	
+	union { char*st; } u_str;
+#define st u_str.st
+
+	argcount = 0;
+	nextarg = 1;
+	typeptr = typetable;
+	memset(typeptr, 0, sizeof(typetable[0]) * ARG_TABLE_SZ);
+	
+	/* Scan the format string for flags and parameters */
+
+	while (*fmt) {
+		sz = skip_to(fmt);
+    		if (sz) {
+      			fmt+=sz;
+    		}
+    		
+    		if (*fmt == '%') {
+    			++fmt;
+
+step:			ch = *fmt++;
+rescan:			switch (ch) {
+			case 0:
+      			case '#':
+      				break;
+      			case 'h':
+				--flag_long;
+				goto step;
+      			case 'j':
+      			case 'q':
+      			case 'L':
+				++flag_long;
+				goto step;
+      			case 'z':
+      			case 'l':
+				++flag_long;
+				goto step;
+      			case '-':
+      			case ' ':
+      			case '+':
+				break;
+      			case '0':
+      			case '1':
+      			case '2':
+      			case '3':
+      			case '4':
+      			case '5':
+      			case '6':
+      			case '7':
+      			case '8':
+      			case '9':
+      				num = strtoul(fmt-1,(char**)&st,10);
+      				ch = *fmt++;
+      				if (ch == '$') {
+					nextarg = num;
+					goto step;
+				}
+				goto rescan;
+			case '*':
+				num = strtoul(fmt-1,(char**)&st,10);
+				ch = *fmt++;
+				if (ch == '$') {
+					hold = nextarg;
+					nextarg = num;
+					if (typeptr[nextarg] != T_INT) {
+						typeptr[nextarg++] = T_INT;
+						argcount++;
+					}
+					nextarg = hold;
+					++fmt;
+				} else {
+					typeptr[nextarg++] = T_INT;
+					argcount++;
+				}
+				goto step;
+			case '.':
+				if (*fmt == '*') {
+					++fmt;
+					cp = *fmt;
+					if (is_digit(cp)) {
+						num = strtoul(fmt,(char**)&st,10);
+						++fmt;
+						ch = *fmt++;
+						if (ch == '$') {
+							hold = nextarg;
+							nextarg = num;
+							if (typeptr[nextarg] != T_INT) {
+								typeptr[nextarg++] = T_INT;
+								argcount++;
+							}
+							nextarg = hold;
+						}
+						goto step;
+					}
+					goto step;
+				}
+				goto rescan;
+			case 'c':
+				if (typeptr[nextarg] != T_INT) {
+					typeptr[nextarg++] = T_INT;
+					argcount++;
+				}
+				break;
+			case '%':
+			case 'm':
+				break;
+			case 's':
+				if (typeptr[nextarg] != T_PCHAR) {
+					typeptr[nextarg++] = T_PCHAR;
+					argcount++;
+				}
+				break;
+			case 'b':
+				break;
+			case 'd':
+      			case 'i':
+      				flag_in_sign = 1;
+      				if (typeptr[nextarg] != T_INT) {
+      					typeptr[nextarg++] = T_INT;
+      					argcount++;
+      				}
+      				break;
+			case 'p':
+			case 'x':
+			case 'X':
+			case 'u':
+      			case 'o':
+				if (flag_long>1 && (typeptr[nextarg] != T_LLONG)) {
+					typeptr[nextarg++] = T_LLONG;
+					argcount++;
+				} else if (flag_long>0 && (typeptr[nextarg] != T_LONG))  {
+					typeptr[nextarg++] = T_LONG;
+					argcount++;
+				} else if (!flag_in_sign && (typeptr[nextarg] != T_UINT)) {
+					typeptr[nextarg++] = T_UINT;
+					argcount++;
+				}
+				break;
+			case 'f':
+			case 'g':
+				if (typeptr[nextarg] != T_DOUBLE) {
+					typeptr[nextarg++] = T_DOUBLE;
+					argcount++;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	/* Return negative value if no arguments found */
+	if (argcount == 0)
+		return (-1);
+
+	/* Create argument array using types found in format string */
+	for (num = 1; num <= argcount; num++) {
+		switch (typetable[num]) {
+			case T_INT:
+				(*argtable)[num].intarg = va_arg(ap, int);
+				break;
+			case T_UINT:
+				(*argtable)[num].uintarg = va_arg(ap, unsigned int);
+				break;
+			case T_PCHAR:
+				(*argtable)[num].pchararg = va_arg(ap, char *);
+				break;
+			case T_LONG:
+				(*argtable)[num].longarg = va_arg(ap, long);
+				break;
+			case T_LLONG:
+				(*argtable)[num].llongarg = va_arg(ap, long long);
+				break;
+			case T_DOUBLE:
+				(*argtable)[num].doublearg = va_arg(ap, double);
+				break;
+		}
+	}
+	return ((int)argcount);
 }
 
 int __asprintf_chk( char ** strp , int flag , const char* format , ... )
