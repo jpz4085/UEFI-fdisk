@@ -2,13 +2,13 @@
 
 This is a port of the util-linux fdisk partitioning tool for use in a UEFI environment. It can be added as an option to the firmware boot menu like an operating system or run as an application from the UEFI Shell. When running from the shell it will accept all valid command line arguments including a block device. If run without arguments or as a firmware boot option the program will display a list of internal disks for selection. The original library can be found on SourceForge at [UEFI fdisk](https://sourceforge.net/projects/uefi-fdisk/) by bub75.
 
-<img align="left" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_help.png" width=386 height=452/>
+ Display Usage | Create Partitions
+:-------------:|:-----------------:
+<img align="left" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_help.png" width=386 height=452/> | <img align="right" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_create.png" width=427 height=452/>
 
-<img align="right" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_create.png" width=427 height=452/>
+##### Display Detailed Partition Information
 
 <img align="center" src="https://raw.githubusercontent.com/jpz4085/UEFI-fdisk/main/.github/images/fdisk_details.png"/>
-
-Figure 3: Display detailed partition information.
 
 ## Requirements
 
