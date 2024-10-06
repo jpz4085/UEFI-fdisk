@@ -88,9 +88,6 @@ CFLAGS += -g $(EFI_DEBUG_FLAGS)
 # Same flags for assembler files.
 ASFLAGS += $(CFLAGS)
 
-# Used with warnx_patch.
-CFLAGS += -DEFI
-
 # Our UEFI glue will need additional includes from GNU EFI.
 CFLAGS += -I$(GNUEFI)/inc/$(ARCH) -I$(GNUEFI)/inc
 
@@ -125,7 +122,7 @@ OBJS += uuid.o
 # Build only the UEFI version by default.
 # Need to "make fdisk" to build the Linux one.
 #
-all: warnx_patch fdisk.efi
+all: fdisk.efi
 
 
 # Cleanup.
@@ -133,11 +130,6 @@ all: warnx_patch fdisk.efi
 clean: #no prerequisites
 	-$(MAKE) -C $(GNUEFI) clean
 	-rm -f core *.o *~ fdisk.efi fdisk.so.s fdisk.so fdisk fdisk.map test
-
-# Display all fdisk warnings/errors in plain text so we can see them.
-warnx_patch:
-	$(shell chmod +x ./warnx_patch.sh)
-	$(shell ./warnx_patch.sh)
 
 # Big big Cleanup.
 #
